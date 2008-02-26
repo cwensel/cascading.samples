@@ -38,9 +38,9 @@ import cascading.tuple.Fields;
 public class Main
   {
 
-  private static class ImportLogAssembly extends PipeAssembly
+  private static class ImportCrawlDataAssembly extends PipeAssembly
     {
-    public ImportLogAssembly( String name )
+    public ImportCrawlDataAssembly( String name )
       {
       // split the text line into "url" and "raw" with the default delimiter of tab
       RegexSplitter regexSplitter = new RegexSplitter( new Fields( "url", "raw" ) );
@@ -105,7 +105,7 @@ public class Main
     // and the second being the "raw" document that had all new line chars ("\n") converted to the text ":nl:".
 
     // a predefined pipe assembly that returns fields named "url" and "page"
-    Pipe importPipe = new ImportLogAssembly( "import pipe" );
+    Pipe importPipe = new ImportCrawlDataAssembly( "import pipe" );
 
     // create the tap instances
     Tap localPagesSource = new Lfs( new TextLine(), inputPath );
