@@ -6,9 +6,9 @@ package loganalysis;
 
 import java.util.Map;
 
-import cascading.Cascade;
-import cascading.CascadeConnector;
-import cascading.Cascades;
+import cascading.cascade.Cascade;
+import cascading.cascade.CascadeConnector;
+import cascading.cascade.Cascades;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.operation.aggregator.Count;
