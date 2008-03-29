@@ -27,7 +27,7 @@ import cascading.pipe.Pipe;
 import cascading.pipe.PipeAssembly;
 import cascading.scheme.SequenceFile;
 import cascading.scheme.TextLine;
-import cascading.tap.Dfs;
+import cascading.tap.Hfs;
 import cascading.tap.Lfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
@@ -109,18 +109,18 @@ public class Main
 
     // create the tap instances
     Tap localPagesSource = new Lfs( new TextLine(), inputPath );
-    Tap importedPages = new Dfs( new SequenceFile( new Fields( "url", "page" ) ), pagesPath );
+    Tap importedPages = new Hfs( new SequenceFile( new Fields( "url", "page" ) ), pagesPath );
 
     // connect the pipe assembly to the tap instances
-    Flow importPagesFlow = new FlowConnector().connect( localPagesSource, importedPages, importPipe );
+    Flow importPagesFlow = new FlowConnector().connect( "import pages", localPagesSource, importedPages, importPipe );
 
     // a predefined pipe assembly that splits the stream into two named "url pipe" and "word pipe"
     // these pipes could be retrieved via the getTails() method and added to new pipe instances
     PipeAssembly wordCountPipe = new WordCountSplitAssembly( "wordcount pipe", "url pipe", "word pipe" );
 
     // create Hadoop sequence files to store the results of the counts
-    Tap sinkUrl = new Dfs( new SequenceFile( new Fields( "url", "word", "count" ) ), urlsPath );
-    Tap sinkWord = new Dfs( new SequenceFile( new Fields( "word", "count" ) ), wordsPath );
+    Tap sinkUrl = new Hfs( new SequenceFile( new Fields( "url", "word", "count" ) ), urlsPath );
+    Tap sinkWord = new Hfs( new SequenceFile( new Fields( "word", "count" ) ), wordsPath );
 
     // convenience method to bind multiple pipes and taps
     Map<String, Tap> sinks = Cascades.tapsMap( new String[]{"url pipe", "word pipe"}, Tap.taps( sinkUrl, sinkWord ) );
@@ -135,11 +135,11 @@ public class Main
     Tap localSinkWord = new Lfs( new TextLine(), localWordsPath );
 
     // connect up both sinks using the same exportPipe assembly
-    Flow exportFromUrlTap = new FlowConnector().connect( sinkUrl, localSinkUrl, exportPipe );
-    Flow exportFromWord = new FlowConnector().connect( sinkWord, localSinkWord, exportPipe );
+    Flow exportFromUrl = new FlowConnector().connect( "export url", sinkUrl, localSinkUrl, exportPipe );
+    Flow exportFromWord = new FlowConnector().connect( "export word", sinkWord, localSinkWord, exportPipe );
 
     // connect up all the flows, order is not significant
-    Cascade cascade = new CascadeConnector().connect( importPagesFlow, count, exportFromUrlTap, exportFromWord );
+    Cascade cascade = new CascadeConnector().connect( importPagesFlow, count, exportFromUrl, exportFromWord );
 
     // run the cascade to completion
     cascade.complete();
