@@ -11,8 +11,8 @@
 
   <property name="cascading.root" location="${basedir}/../cascading"/>
   <property file="${cascading.root}/version.properties"/>
-  <property name="release.version" value="x.y.z"/>
-  <property name="cascading.filename" value="cascading-${release.version}.jar"/>
+  <property name="cascading.release.version" value="x.y.z"/>
+  <property name="cascading.filename" value="cascading-${cascading.release.version}.jar"/>
 
   <condition property="cascading.lib" value="${cascading.root}/${cascading.filename}"
              else="${cascading.root}/build/${cascading.filename}">
@@ -62,7 +62,7 @@
   <target name="clean">
 
     <echo message="cleaning..."/>
-    <delete dir="${build.classes}"/>
+    <delete dir="${build.dir}"/>
   </target>
 
   <target name="build">

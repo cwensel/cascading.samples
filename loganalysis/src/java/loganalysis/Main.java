@@ -20,7 +20,7 @@ import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
 import cascading.scheme.TextLine;
-import cascading.tap.Dfs;
+import cascading.tap.Hfs;
 import cascading.tap.Lfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
@@ -47,8 +47,8 @@ public class Main
 
     // create tap to read a resource from the local file system
     Tap localLogTap = new Lfs( new TextLine(), inputPath );
-    // create a tap to read/write from a Hadoop distributed filesystem
-    Tap parsedLogTap = new Dfs( Regexes.APACHE_GROUP_FIELDS, logsPath );
+    // create a tap to read/write from the default filesystem
+    Tap parsedLogTap = new Hfs( Regexes.APACHE_GROUP_FIELDS, logsPath );
 
     // connect the assembly to source and sink taps
     Flow importLogFlow = flowConnector.connect( localLogTap, parsedLogTap, importPipe );
@@ -74,9 +74,9 @@ public class Main
     tmCountPipe = new GroupBy( tmCountPipe, new Fields( "tm" ) );
     tmCountPipe = new Every( tmCountPipe, Fields.KEYS, new Count() );
 
-    // create taps to write the results to a Hadoop distributed file system, using the given fields
-    Tap tsSinkTap = new Dfs( new TextLine( new Fields( "ts", "count" ) ), arrivalRateSecPath );
-    Tap tmSinkTap = new Dfs( new TextLine( new Fields( "tm", "count" ) ), arrivalRateMinPath );
+    // create taps to write the results the default filesystem, using the given fields
+    Tap tsSinkTap = new Hfs( new TextLine( new Fields( "ts", "count" ) ), arrivalRateSecPath );
+    Tap tmSinkTap = new Hfs( new TextLine( new Fields( "tm", "count" ) ), arrivalRateMinPath );
 
     // a convenience method for binding taps and pipes, order is significant
     Map<String, Tap> sinks = Cascades.tapsMap( Pipe.pipes( tsCountPipe, tmCountPipe ), Tap.taps( tsSinkTap, tmSinkTap ) );
