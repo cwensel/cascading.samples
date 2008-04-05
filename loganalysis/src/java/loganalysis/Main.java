@@ -13,8 +13,8 @@ import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.operation.aggregator.Count;
 import cascading.operation.expression.ExpressionFunction;
-import cascading.operation.regex.Regexes;
-import cascading.operation.text.Texts;
+import cascading.operation.regex.RegexParser;
+import cascading.operation.text.DateParser;
 import cascading.pipe.Each;
 import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
@@ -43,12 +43,16 @@ public class Main
 
     // create an assembly to import an Apache log file and store on DFS
     // declares: "time", "method", "event", "status", "size"
-    Pipe importPipe = new Each( "import", new Fields( "line" ), Regexes.APACHE_PARSER );
+    Fields apacheFields = new Fields( "ip", "time", "method", "event", "status", "size" );
+    String apacheRegex = "^([^ ]*) +[^ ]* +[^ ]* +\\[([^]]*)\\] +\\\"([^ ]*) ([^ ]*) [^ ]*\\\" ([^ ]*) ([^ ]*).*$";
+    int[] apacheGroups = {1, 2, 3, 4, 5, 6};
+    RegexParser parser = new RegexParser( apacheFields, apacheRegex, apacheGroups );
+    Pipe importPipe = new Each( "import", new Fields( "line" ), parser );
 
     // create tap to read a resource from the local file system
     Tap localLogTap = new Lfs( new TextLine(), inputPath );
     // create a tap to read/write from the default filesystem
-    Tap parsedLogTap = new Hfs( Regexes.APACHE_GROUP_FIELDS, logsPath );
+    Tap parsedLogTap = new Hfs( apacheFields, logsPath );
 
     // connect the assembly to source and sink taps
     Flow importLogFlow = flowConnector.connect( localLogTap, parsedLogTap, importPipe );
@@ -58,7 +62,7 @@ public class Main
 
     // apply a text parser to create a timestamp with 'second' granularity
     // declares field "ts"
-    Pipe tsPipe = new Each( "arrival rate", new Fields( "time" ), Texts.APACHE_DATE_PARSER );
+    Pipe tsPipe = new Each( "arrival rate", new Fields( "time" ), new DateParser( "dd/MMM/yyyy:HH:mm:ss Z" ) );
 
     // name the per second assembly and split on tsPipe
     Pipe tsCountPipe = new Pipe( "tsCount", tsPipe );
