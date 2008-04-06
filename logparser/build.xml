@@ -1,0 +1,153 @@
+<?xml version="1.0"?>
+
+<project name="logparser" default="build" basedir=".">
+
+  <!-- load plugin-specific properties first -->
+  <!--<property file="${user.home}/${name}.build.properties" />-->
+  <!--<property file="${root}/build.properties" />-->
+
+  <property name="hadoop.root" location="${basedir}/../hadoop"/>
+  <property name="hadoop.lib" location="${hadoop.root}/lib"/>
+
+  <property name="cascading.root" location="${basedir}/../cascading"/>
+  <property file="${cascading.root}/version.properties"/>
+  <property name="cascading.release.version" value="x.y.z"/>
+  <property name="cascading.filename" value="cascading-${cascading.release.version}.jar"/>
+
+  <condition property="cascading.lib" value="${cascading.root}/${cascading.filename}"
+             else="${cascading.root}/build/${cascading.filename}">
+    <available file="${cascading.root}/${cascading.filename}"/>
+  </condition>
+
+  <property name="src.dir" location="${basedir}/src/java"/>
+  <property name="src.test" location="${basedir}/src/test"/>
+
+  <available file="${src.dir}" type="dir" property="main.available"/>
+  <available file="${src.test}" type="dir" property="test.available"/>
+
+  <property name="conf.dir" location="${hadoop.root}/conf"/>
+
+  <property name="lib.dir" location="${basedir}/lib"/>
+
+  <property name="build.dir" location="${basedir}/build/"/>
+  <property name="build.classes" location="${build.dir}/classes"/>
+  <property name="build.test" location="${build.dir}/test"/>
+
+  <property name="dist" location="dist"/>
+
+  <property name="ssh.keyfile" location="${user.home}/.ssh/id_rsa"/>
+
+  <!--<property name="deploy.dir" location="${root}"/>-->
+
+  <path id="project.class.path">
+    <pathelement location="${build.classes}"/>
+    <pathelement location="${build.test}"/>
+    <pathelement location="${cascading.lib}"/>
+
+    <fileset dir="${lib.dir}">
+      <include name="*.jar"/>
+    </fileset>
+
+    <!--<fileset dir="${hadoop.lib}">-->
+    <!--<include name="*.jar"/>-->
+    <!--</fileset>-->
+
+    <!--<fileset dir="${hadoop.root}">-->
+    <!--<include name="*.jar"/>-->
+    <!--</fileset>-->
+
+  </path>
+
+
+  <target name="clean">
+
+    <echo message="cleaning..."/>
+    <delete dir="${build.dir}"/>
+  </target>
+
+  <target name="build">
+
+    <echo message="building..."/>
+    <echo message="using cascading lib: ${cascading.lib}"/>
+    <mkdir dir="${build.classes}"/>
+    <mkdir dir="${lib.dir}"/>
+
+    <javac srcdir="${src.dir}" destdir="${build.classes}" verbose="off">
+      <classpath refid="project.class.path"/>
+    </javac>
+
+    <copy todir="${build.classes}">
+      <fileset dir="${src.dir}">
+        <exclude name="**/*.java"/>
+      </fileset>
+    </copy>
+
+  </target>
+
+  <target name="jar" depends="build">
+
+    <unjar dest="${build.classes}" src="${cascading.lib}"/>
+
+    <jar jarfile="${build.dir}/${ant.project.name}.jar">
+      <fileset dir="${build.classes}"/>
+      <fileset dir="${basedir}" includes="lib/"/>
+      <manifest>
+        <attribute name="Main-Class" value="${ant.project.name}/Main"/>
+      </manifest>
+    </jar>
+
+  </target>
+
+  <target name="gz" depends="jar">
+
+    <tar tarfile="${build.dir}/${ant.project.name}.tgz">
+      <tarfileset dir="${build.dir}"
+                  prefix="${ant.project.name}/"
+                  preserveLeadingSlashes="false">
+        <include name="${ant.project.name}.jar"/>
+      </tarfileset>
+    </tar>
+
+    <gzip src="${build.dir}/${ant.project.name}.tar" destfile="${build.dir}/${ant.project.name}.tgz"/>
+
+    <delete file="${build.dir}/${ant.project.name}.tar"/>
+
+  </target>
+
+  <target name="deploy" depends="gz">
+
+    <scp todir="${remote}" keyfile="${ssh.keyfile}" passphrase="" file="${build.dir}/${ant.project.name}.tgz"/>
+
+  </target>
+
+  <target name="dist" depends="clean">
+
+    <delete dir="${dist}"/>
+    <delete dir="${ant.project.name}.tgz"/>
+
+    <mkdir dir="${dist}"/>
+
+    <copy todir="${dist}">
+
+      <fileset dir=".">
+        <include name="data/**"/>
+        <include name="src/**"/>
+        <include name="build.xml"/>
+        <include name="README.TXT"/>
+      </fileset>
+
+    </copy>
+
+  </target>
+
+  <target name="tar" depends="dist">
+    <tar destfile="${ant.project.name}.tgz"
+         compression="gzip">
+      <tarfileset dir="dist/" prefix="${ant.project.name}">
+        <include name="**/**"/>
+      </tarfileset>
+    </tar>
+  </target>
+
+
+</project>
