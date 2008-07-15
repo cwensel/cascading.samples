@@ -65,7 +65,8 @@ public class Main
     Pipe importPipe = new Each( "parser", new Fields( "line" ), parser );
 
     // create a SINK tap to write to the default filesystem
-    Tap remoteLogTap = new Hfs( new TextLine( apacheFields ), outputPath );
+    // by default, TextLine writes all fields out
+    Tap remoteLogTap = new Hfs( new TextLine(), outputPath );
 
     // connect the assembly to the SOURCE and SINK taps
     Flow parsedLogFlow = new FlowConnector().connect( localLogTap, remoteLogTap, importPipe );
