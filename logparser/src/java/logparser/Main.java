@@ -73,7 +73,7 @@ public class Main
 
     // optionally print out the parsedLogFlow to a graph file for import into a graphics package
     // this is useful for visualizing the flow to help with debugging
-    parsedLogFlow.writeDOT( "logparser.dot" );
+//    parsedLogFlow.writeDOT( "logparser.dot" );
 
     // start execution of the flow (either locally or on the cluster
     parsedLogFlow.start();
