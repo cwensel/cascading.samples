@@ -96,8 +96,8 @@ public class Main
     tmCountPipe = new Every( tmCountPipe, Fields.KEYS, new Count() );
 
     // create taps to write the results the default filesystem, using the given fields
-    Tap tsSinkTap = new Hfs( new TextLine( new Fields( "ts", "count" ) ), arrivalRateSecPath );
-    Tap tmSinkTap = new Hfs( new TextLine( new Fields( "tm", "count" ) ), arrivalRateMinPath );
+    Tap tsSinkTap = new Hfs( new TextLine(), arrivalRateSecPath );
+    Tap tmSinkTap = new Hfs( new TextLine(), arrivalRateMinPath );
 
     // a convenience method for binding taps and pipes, order is significant
     Map<String, Tap> sinks = Cascades.tapsMap( Pipe.pipes( tsCountPipe, tmCountPipe ), Tap.taps( tsSinkTap, tmSinkTap ) );
