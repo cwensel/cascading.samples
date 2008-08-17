@@ -41,7 +41,7 @@ import cascading.pipe.Each;
 import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
-import cascading.pipe.PipeAssembly;
+import cascading.pipe.SubAssembly;
 import cascading.scheme.SequenceFile;
 import cascading.scheme.TextLine;
 import cascading.tap.Hfs;
@@ -55,7 +55,7 @@ import cascading.tuple.Fields;
 public class Main
   {
 
-  private static class ImportCrawlDataAssembly extends PipeAssembly
+  private static class ImportCrawlDataAssembly extends SubAssembly
     {
     public ImportCrawlDataAssembly( String name )
       {
@@ -73,7 +73,7 @@ public class Main
       }
     }
 
-  private static class WordCountSplitAssembly extends PipeAssembly
+  private static class WordCountSplitAssembly extends SubAssembly
     {
     public WordCountSplitAssembly( String sourceName, String sinkUrlName, String sinkWordName )
       {
@@ -133,7 +133,7 @@ public class Main
 
     // a predefined pipe assembly that splits the stream into two named "url pipe" and "word pipe"
     // these pipes could be retrieved via the getTails() method and added to new pipe instances
-    PipeAssembly wordCountPipe = new WordCountSplitAssembly( "wordcount pipe", "url pipe", "word pipe" );
+    SubAssembly wordCountPipe = new WordCountSplitAssembly( "wordcount pipe", "url pipe", "word pipe" );
 
     // create Hadoop sequence files to store the results of the counts
     Tap sinkUrl = new Hfs( new SequenceFile( new Fields( "url", "word", "count" ) ), urlsPath );
