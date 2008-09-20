@@ -22,6 +22,7 @@
 package loganalysis;
 
 import java.util.Map;
+import java.util.Properties;
 
 import cascading.cascade.Cascade;
 import cascading.cascade.CascadeConnector;
@@ -49,7 +50,11 @@ public class Main
   {
   public static void main( String[] args )
     {
-    FlowConnector flowConnector = new FlowConnector();
+    // set the current job jar
+    Properties properties = new Properties();
+    FlowConnector.setJarClass( properties, Main.class );
+
+    FlowConnector flowConnector = new FlowConnector( properties );
     CascadeConnector cascadeConnector = new CascadeConnector();
 
     String inputPath = args[ 0 ];

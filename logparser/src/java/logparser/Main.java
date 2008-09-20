@@ -21,6 +21,8 @@
 
 package logparser;
 
+import java.util.Properties;
+
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.operation.regex.RegexParser;
@@ -68,8 +70,12 @@ public class Main
     // by default, TextLine writes all fields out
     Tap remoteLogTap = new Hfs( new TextLine(), outputPath );
 
+    // set the current job jar
+    Properties properties = new Properties();
+    FlowConnector.setJarClass( properties, Main.class );
+
     // connect the assembly to the SOURCE and SINK taps
-    Flow parsedLogFlow = new FlowConnector().connect( localLogTap, remoteLogTap, importPipe );
+    Flow parsedLogFlow = new FlowConnector( properties ).connect( localLogTap, remoteLogTap, importPipe );
 
     // optionally print out the parsedLogFlow to a graph file for import into a graphics package
     // this is useful for visualizing the flow to help with debugging

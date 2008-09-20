@@ -22,6 +22,7 @@
 package wordcount;
 
 import java.util.Map;
+import java.util.Properties;
 
 import cascading.cascade.Cascade;
 import cascading.cascade.CascadeConnector;
@@ -109,6 +110,11 @@ public class Main
 
   public static void main( String[] args )
     {
+    // set the current job jar
+    Properties properties = new Properties();
+    FlowConnector.setJarClass( properties, Main.class );
+    FlowConnector flowConnector = new FlowConnector( properties );
+
     String inputPath = args[ 0 ];
     String pagesPath = args[ 1 ] + "/pages/";
     String urlsPath = args[ 1 ] + "/urls/";
@@ -129,7 +135,7 @@ public class Main
     Tap importedPages = new Hfs( new SequenceFile( new Fields( "url", "page" ) ), pagesPath );
 
     // connect the pipe assembly to the tap instances
-    Flow importPagesFlow = new FlowConnector().connect( "import pages", localPagesSource, importedPages, importPipe );
+    Flow importPagesFlow = flowConnector.connect( "import pages", localPagesSource, importedPages, importPipe );
 
     // a predefined pipe assembly that splits the stream into two named "url pipe" and "word pipe"
     // these pipes could be retrieved via the getTails() method and added to new pipe instances
@@ -143,7 +149,7 @@ public class Main
     Map<String, Tap> sinks = Cascades.tapsMap( new String[]{"url pipe", "word pipe"}, Tap.taps( sinkUrl, sinkWord ) );
 
     // wordCountPipe will be recognized as an assembly and handled appropriately
-    Flow count = new FlowConnector().connect( importedPages, sinks, wordCountPipe );
+    Flow count = flowConnector.connect( importedPages, sinks, wordCountPipe );
 
     // create an assembly to export the Hadoop sequence file to local text files
     Pipe exportPipe = new Each( "export pipe", new Identity() );
@@ -152,8 +158,8 @@ public class Main
     Tap localSinkWord = new Lfs( new TextLine(), localWordsPath );
 
     // connect up both sinks using the same exportPipe assembly
-    Flow exportFromUrl = new FlowConnector().connect( "export url", sinkUrl, localSinkUrl, exportPipe );
-    Flow exportFromWord = new FlowConnector().connect( "export word", sinkWord, localSinkWord, exportPipe );
+    Flow exportFromUrl = flowConnector.connect( "export url", sinkUrl, localSinkUrl, exportPipe );
+    Flow exportFromWord = flowConnector.connect( "export word", sinkWord, localSinkWord, exportPipe );
 
     // connect up all the flows, order is not significant
     Cascade cascade = new CascadeConnector().connect( importPagesFlow, count, exportFromUrl, exportFromWord );
