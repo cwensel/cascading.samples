@@ -72,7 +72,7 @@ public class Main
 
     // set the current job jar
     Properties properties = new Properties();
-    FlowConnector.setJarClass( properties, Main.class );
+    FlowConnector.setApplicationJarClass( properties, Main.class );
 
     // connect the assembly to the SOURCE and SINK taps
     Flow parsedLogFlow = new FlowConnector( properties ).connect( localLogTap, remoteLogTap, importPipe );

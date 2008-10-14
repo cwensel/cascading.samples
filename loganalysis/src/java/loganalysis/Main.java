@@ -52,7 +52,7 @@ public class Main
     {
     // set the current job jar
     Properties properties = new Properties();
-    FlowConnector.setJarClass( properties, Main.class );
+    FlowConnector.setApplicationJarClass( properties, Main.class );
 
     FlowConnector flowConnector = new FlowConnector( properties );
     CascadeConnector cascadeConnector = new CascadeConnector();
@@ -89,7 +89,7 @@ public class Main
     // name the per second assembly and split on tsPipe
     Pipe tsCountPipe = new Pipe( "tsCount", tsPipe );
     tsCountPipe = new GroupBy( tsCountPipe, new Fields( "ts" ) );
-    tsCountPipe = new Every( tsCountPipe, Fields.KEYS, new Count() );
+    tsCountPipe = new Every( tsCountPipe, Fields.GROUP, new Count() );
 
     // apply expression to create a timestamp with 'minute' granularity
     // declares field "tm"
@@ -98,7 +98,7 @@ public class Main
     // name the per minute assembly and split on tmPipe
     Pipe tmCountPipe = new Pipe( "tmCount", tmPipe );
     tmCountPipe = new GroupBy( tmCountPipe, new Fields( "tm" ) );
-    tmCountPipe = new Every( tmCountPipe, Fields.KEYS, new Count() );
+    tmCountPipe = new Every( tmCountPipe, Fields.GROUP, new Count() );
 
     // create taps to write the results the default filesystem, using the given fields
     Tap tsSinkTap = new Hfs( new TextLine(), arrivalRateSecPath );

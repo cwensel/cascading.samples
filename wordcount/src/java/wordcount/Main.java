@@ -112,7 +112,7 @@ public class Main
     {
     // set the current job jar
     Properties properties = new Properties();
-    FlowConnector.setJarClass( properties, Main.class );
+    FlowConnector.setApplicationJarClass( properties, Main.class );
     FlowConnector flowConnector = new FlowConnector( properties );
 
     String inputPath = args[ 0 ];
