@@ -21,7 +21,7 @@
   ~ along with Cascading.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
-<project name="wordcount" default="build" basedir=".">
+<project name="logparser" default="build" basedir=".">
 
   <!-- load properties first -->
   <!--<property file="${user.home}/${name}.build.properties" />-->
