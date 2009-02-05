@@ -61,10 +61,12 @@ public class Main
     int[] allGroups = {1, 2, 3, 4, 5, 6};
 
     // create the stream parser
-    RegexParser parser = new RegexParser( apacheFields, apacheRegex, allGroups );
+    RegexParser timeParser = new RegexParser( apacheFields, apacheRegex, allGroups );
 
-    // create the parser pipe element, with the name 'parser', and with the input field name 'line'
-    Pipe importPipe = new Each( "parser", new Fields( "line" ), parser );
+    // create the import pipe element, with the name 'import', and with the input argument named "line"
+    // replace the incoming tuple with the parser results
+    // "line" -> parser -> "ts"
+    Pipe importPipe = new Each( "import", new Fields( "line" ), timeParser, Fields.RESULTS );
 
     // create a SINK tap to write to the default filesystem
     // by default, TextLine writes all fields out

@@ -84,7 +84,8 @@ public class Main
 
     // apply a text parser to create a timestamp with 'second' granularity
     // declares field "ts"
-    Pipe tsPipe = new Each( "arrival rate", new Fields( "time" ), new DateParser( "dd/MMM/yyyy:HH:mm:ss Z" ) );
+    DateParser dateParser = new DateParser( new Fields( "ts" ), "dd/MMM/yyyy:HH:mm:ss Z" );
+    Pipe tsPipe = new Each( "arrival rate", new Fields( "time" ), dateParser, Fields.RESULTS );
 
     // name the per second assembly and split on tsPipe
     Pipe tsCountPipe = new Pipe( "tsCount", tsPipe );
