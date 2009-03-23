@@ -71,13 +71,15 @@ public class Main
     RegexParser parser = new RegexParser( apacheFields, apacheRegex, apacheGroups );
     Pipe importPipe = new Each( "import", new Fields( "line" ), parser );
 
-    // create tap to read a resource from the local file system
-    Tap localLogTap = new Lfs( new TextLine(), inputPath );
+    // create tap to read a resource from the local file system, if not an url for an external resource
+    // Lfs allows for relative paths
+    Tap logTap =
+      inputPath.matches( "^[^:]+://.*" ) ? new Hfs( new TextLine(), inputPath ) : new Lfs( new TextLine(), inputPath );
     // create a tap to read/write from the default filesystem
     Tap parsedLogTap = new Hfs( apacheFields, logsPath );
 
     // connect the assembly to source and sink taps
-    Flow importLogFlow = flowConnector.connect( localLogTap, parsedLogTap, importPipe );
+    Flow importLogFlow = flowConnector.connect( logTap, parsedLogTap, importPipe );
 
     // create an assembly to parse out the time field into a timestamp
     // then count the number of requests per second and per minute

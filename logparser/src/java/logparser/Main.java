@@ -44,9 +44,10 @@ public class Main
     String inputPath = args[ 0 ];
     String outputPath = args[ 1 ];
 
-    // create SOURCE tap to read a resource from the local file system
+    // create SOURCE tap to read a resource from the local file system, if input is not an URL
     // be default the TextLine scheme declares two fields, "offset" and "line"
-    Tap localLogTap = new Lfs( new TextLine(), inputPath );
+    Tap logTap =
+      inputPath.matches( "^[^:]+://.*" ) ? new Hfs( new TextLine(), inputPath ) : new Lfs( new TextLine(), inputPath );
 
     // create an assembly to parse an Apache log file and store on an HDFS cluster
 
@@ -77,7 +78,7 @@ public class Main
     FlowConnector.setApplicationJarClass( properties, Main.class );
 
     // connect the assembly to the SOURCE and SINK taps
-    Flow parsedLogFlow = new FlowConnector( properties ).connect( localLogTap, remoteLogTap, importPipe );
+    Flow parsedLogFlow = new FlowConnector( properties ).connect( logTap, remoteLogTap, importPipe );
 
     // optionally print out the parsedLogFlow to a graph file for import into a graphics package
     // this is useful for visualizing the flow to help with debugging
