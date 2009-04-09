@@ -21,8 +21,6 @@
 
 package logparser;
 
-import java.util.Properties;
-
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.operation.regex.RegexParser;
@@ -34,6 +32,8 @@ import cascading.tap.Lfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 
+import java.util.Properties;
+
 /**
  *
  */
@@ -44,10 +44,11 @@ public class Main
     String inputPath = args[ 0 ];
     String outputPath = args[ 1 ];
 
+    // define what the input file looks like, "offset" is bytes from beginning
+    TextLine scheme = new TextLine( new Fields( "offset", "line" ) );
+
     // create SOURCE tap to read a resource from the local file system, if input is not an URL
-    // be default the TextLine scheme declares two fields, "offset" and "line"
-    Tap logTap =
-      inputPath.matches( "^[^:]+://.*" ) ? new Hfs( new TextLine(), inputPath ) : new Lfs( new TextLine(), inputPath );
+    Tap logTap = inputPath.matches( "^[^:]+://.*" ) ? new Hfs( scheme, inputPath ) : new Lfs( scheme, inputPath );
 
     // create an assembly to parse an Apache log file and store on an HDFS cluster
 
@@ -61,13 +62,13 @@ public class Main
     // a field name from 'apacheFields', above, respectively
     int[] allGroups = {1, 2, 3, 4, 5, 6};
 
-    // create the stream parser
-    RegexParser timeParser = new RegexParser( apacheFields, apacheRegex, allGroups );
+    // create the parser
+    RegexParser parser = new RegexParser( apacheFields, apacheRegex, allGroups );
 
     // create the import pipe element, with the name 'import', and with the input argument named "line"
     // replace the incoming tuple with the parser results
     // "line" -> parser -> "ts"
-    Pipe importPipe = new Each( "import", new Fields( "line" ), timeParser, Fields.RESULTS );
+    Pipe importPipe = new Each( "import", new Fields( "line" ), parser, Fields.RESULTS );
 
     // create a SINK tap to write to the default filesystem
     // by default, TextLine writes all fields out
@@ -80,9 +81,8 @@ public class Main
     // connect the assembly to the SOURCE and SINK taps
     Flow parsedLogFlow = new FlowConnector( properties ).connect( logTap, remoteLogTap, importPipe );
 
-    // optionally print out the parsedLogFlow to a graph file for import into a graphics package
-    // this is useful for visualizing the flow to help with debugging
-//    parsedLogFlow.writeDOT( "logparser.dot" );
+    // optionally print out the parsedLogFlow to a DOT file for import into a graphics package
+    // parsedLogFlow.writeDOT( "logparser.dot" );
 
     // start execution of the flow (either locally or on the cluster
     parsedLogFlow.start();
