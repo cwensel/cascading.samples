@@ -23,53 +23,16 @@ package hadoop;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.*;
 
 import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  *
  */
 public class Main
   {
-  public static class RegexParserMap extends MapReduceBase implements Mapper<LongWritable, Text, Text, Text>
-    {
-    private Pattern pattern;
-    private Matcher matcher;
-
-    @Override
-    public void configure( JobConf job )
-      {
-      pattern = Pattern.compile( job.get( "logparser.regex" ) );
-      matcher = pattern.matcher( "" ); // lets re-use the matcher
-      }
-
-    @Override
-    public void map( LongWritable key, Text value, OutputCollector<Text, Text> output, Reporter reporter ) throws IOException
-      {
-      matcher.reset( value.toString() );
-
-      if( !matcher.find() )
-        throw new RuntimeException( "could not match pattern: [" + pattern + "] with value: [" + value + "]" );
-
-      StringBuffer buffer = new StringBuffer();
-
-      for( int i = 0; i < matcher.groupCount(); i++ )
-        {
-        if( i != 0 )
-          buffer.append( "\t" );
-
-        buffer.append( matcher.group( i + 1 ) ); // skip group 0
-        }
-
-      // pass null so a TAB is not prepended, not all OutputFormats accept null
-      output.collect( null, new Text( buffer.toString() ) );
-      }
-    }
 
   public static void main( String[] args ) throws IOException
     {
