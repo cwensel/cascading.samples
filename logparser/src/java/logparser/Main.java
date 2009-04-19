@@ -29,6 +29,7 @@ import cascading.pipe.Pipe;
 import cascading.scheme.TextLine;
 import cascading.tap.Hfs;
 import cascading.tap.Lfs;
+import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 
@@ -72,7 +73,7 @@ public class Main
 
     // create a SINK tap to write to the default filesystem
     // by default, TextLine writes all fields out
-    Tap remoteLogTap = new Hfs( new TextLine(), outputPath );
+    Tap remoteLogTap = new Hfs( new TextLine(), outputPath, SinkMode.REPLACE );
 
     // set the current job jar
     Properties properties = new Properties();

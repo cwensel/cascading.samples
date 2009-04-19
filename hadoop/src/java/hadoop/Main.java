@@ -21,6 +21,7 @@
 
 package hadoop;
 
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -38,17 +39,19 @@ public class Main
   public static class RegexParserMap extends MapReduceBase implements Mapper<LongWritable, Text, Text, Text>
     {
     Pattern pattern;
+    private Matcher matcher;
 
     @Override
     public void configure( JobConf job )
       {
       pattern = Pattern.compile( job.get( "logparser.regex" ) );
+      matcher = pattern.matcher( "" ); // lets re-use the matcher
       }
 
     @Override
     public void map( LongWritable key, Text value, OutputCollector<Text, Text> output, Reporter reporter ) throws IOException
       {
-      Matcher matcher = pattern.matcher( value.toString() );
+      matcher.reset( value.toString() );
 
       if( !matcher.find() )
         throw new RuntimeException( "could not match pattern: [" + pattern + "] with value: [" + value + "]" );
@@ -73,6 +76,13 @@ public class Main
     // create Hadoop path instances
     Path inputPath = new Path( args[ 0 ] );
     Path outputPath = new Path( args[ 1 ] );
+
+    // get the FileSystem instances for the input path
+    FileSystem outputFS = outputPath.getFileSystem( new JobConf() );
+
+    // if output path exists, delete recursively
+    if( outputFS.exists( outputPath ) )
+      outputFS.delete( outputPath, true );
 
     // initialize Hadoop job configuration
     JobConf jobConf = new JobConf();
