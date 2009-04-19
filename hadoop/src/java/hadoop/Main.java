@@ -38,7 +38,7 @@ public class Main
   {
   public static class RegexParserMap extends MapReduceBase implements Mapper<LongWritable, Text, Text, Text>
     {
-    Pattern pattern;
+    private Pattern pattern;
     private Matcher matcher;
 
     @Override
@@ -101,7 +101,7 @@ public class Main
     jobConf.setOutputKeyClass( Text.class );
     jobConf.setOutputValueClass( Text.class );
 
-    // must set to zero since we have no reducers
+    // must set to zero since we have no redcue function
     jobConf.setNumReduceTasks( 0 );
 
     // configure our parsing map classs
