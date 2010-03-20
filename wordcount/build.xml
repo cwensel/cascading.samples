@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <!--
-  ~ Copyright (c) 2007-2008 Concurrent, Inc. All Rights Reserved.
+  ~ Copyright (c) 2007-2010 Concurrent, Inc. All Rights Reserved.
   ~
   ~ Project and contact information: http://www.cascading.org/
   ~
@@ -42,9 +42,6 @@
              else="${cascading.home}">
     <available file="${cascading.home}/build"/>
   </condition>
-
-  <!--<property name="cascading.lib.core" value="${cascading.path}/${cascading.filename.core}"/>-->
-  <!--<property name="cascading.lib.xml" value="${cascading.path}/${cascading.filename.xml}"/>-->
 
   <property name="src.dir" location="${basedir}/src/java"/>
   <property name="src.test" location="${basedir}/src/test"/>
