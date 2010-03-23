@@ -38,11 +38,13 @@
 
     <untar dest="${cascading.artifact.home}/current" compression="gzip" failOnEmptyArchive="true">
       <fileset dir="${cascading.artifact.home}">
-        <include name="*.tgz"/>
+        <include name="**/*.tgz"/>
       </fileset>
     </untar>
 
-    <dirset id="artifact.path" dir="${cascading.artifact.home}/current/" includes="*"/>
+    <dirset id="artifact.path" dir="${cascading.artifact.home}/current/" >
+      <exclude name="*Files"/>
+    </dirset>
     <pathconvert property="cascading.home" refid="artifact.path"/>
 
     <echo message="using cascading.home: ${cascading.home}"/>
