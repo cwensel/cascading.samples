@@ -43,6 +43,7 @@
     </untar>
 
     <dirset id="artifact.path" dir="${cascading.artifact.home}/current/" >
+      <include name="*"/>
       <exclude name="*Files"/>
     </dirset>
     <pathconvert property="cascading.home" refid="artifact.path"/>
