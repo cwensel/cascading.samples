@@ -1,0 +1,143 @@
+<?xml version="1.0"?>
+
+<!--
+  ~ Copyright (c) 2007-2010 Concurrent, Inc. All Rights Reserved.
+  ~
+  ~ Project and contact information: http://www.cascading.org/
+  ~
+  ~ This file is part of the Cascading project.
+  ~
+  ~ Cascading is free software: you can redistribute it and/or modify
+  ~ it under the terms of the GNU General Public License as published by
+  ~ the Free Software Foundation, either version 3 of the License, or
+  ~ (at your option) any later version.
+  ~
+  ~ Cascading is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU General Public License
+  ~ along with Cascading.  If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<project name="samples" default="build" basedir=".">
+
+  <!-- load properties first -->
+  <!--<property file="${user.home}/${name}.build.properties" />-->
+  <property file="${basedir}/build.properties"/>
+
+  <property name="hadoop.home" location="${basedir}/../hadoop"/>
+
+  <tstamp/>
+
+  <target name="build" depends="wordcount,logparser,loganalysis"/>
+
+  <target name="artifacts" if="cascading.artifact.home">
+    <echo message="using artifacts in: ${cascading.artifact.home}"/>
+
+    <untar dest="${cascading.artifact.home}/current" compression="gzip" failOnEmptyArchive="true">
+      <fileset dir="${cascading.artifact.home}">
+        <include name="*.tgz"/>
+      </fileset>
+    </untar>
+
+    <dirset id="artifact.path" dir="${cascading.artifact.home}/current/" includes="*"/>
+    <pathconvert property="cascading.home" refid="artifact.path"/>
+
+    <echo message="using cascading.home: ${cascading.home}"/>
+  </target>
+
+  <target name="wordcount">
+    <antcall target="sample">
+      <param name="sample.name" value="wordcount"/>
+      <param name="sample.line" value="jar build/wordcount.jar data/url+page.200.txt output local"/>
+      <param name="verify.size" value="5"/>
+    </antcall>
+
+    <antcall target="s3-package">
+      <param name="sample.name" value="wordcount"/>
+    </antcall>
+  </target>
+
+  <target name="logparser">
+    <antcall target="sample">
+      <param name="sample.name" value="logparser"/>
+      <param name="sample.line" value="jar build/logparser.jar data/apache.200.txt output"/>
+      <param name="verify.size" value="1"/>
+    </antcall>
+
+    <antcall target="s3-package">
+      <param name="sample.name" value="logparser"/>
+    </antcall>
+  </target>
+
+  <target name="loganalysis">
+    <antcall target="sample">
+      <param name="sample.name" value="loganalysis"/>
+      <param name="sample.line" value="jar build/loganalysis.jar data/apache.200.txt output"/>
+      <param name="verify.size" value="3"/>
+    </antcall>
+
+    <antcall target="s3-package">
+      <param name="sample.name" value="loganalysis"/>
+    </antcall>
+  </target>
+
+  <target name="sample" depends="artifacts">
+    <ant dir="${sample.name}" inheritall="false">
+      <target name="clean"/>
+      <target name="tar"/>
+    </ant>
+
+    <ant dir="${sample.name}/dist/" inheritall="false" target="jar">
+      <property name="cascading.home" location="${cascading.home}/"/>
+    </ant>
+
+    <exec dir="${sample.name}/dist/" executable="${hadoop.home}/bin/hadoop" output="${sample.name}/dist/console.txt">
+      <env key="HADOOP_HOME" value="${hadoop.home}"/>
+      <arg line="${sample.line}"/>
+    </exec>
+
+    <fail message="part files missing, expected ${verify.size}">
+      <condition>
+        <not>
+          <resourcecount count="${verify.size}">
+            <fileset dir="${sample.name}/dist" includes="**/part-00000"/>
+          </resourcecount>
+        </not>
+      </condition>
+    </fail>
+
+    <move file="${sample.name}/${sample.name}.tgz" tofile="${sample.name}/${sample.name}-${DSTAMP}.tgz"/>
+
+  </target>
+
+  <target name="s3-package" if="package.remote.bucket">
+
+    <taskdef name="S3Upload" classname="dak.ant.taskdefs.S3Upload"/>
+
+    <S3Upload verbose="true"
+              accessId="${package.aws.accessId}"
+              secretKey="${package.aws.secretKey}"
+              bucket="${package.remote.bucket}"
+              prefix="samples/"
+              publicRead="true">
+      <fileset dir="${sample.name}" includes="${sample.name}-${DSTAMP}.tgz"/>
+    </S3Upload>
+
+    <echo message="http://${package.remote.bucket}/samples/${sample.name}-${DSTAMP}.tgz"
+          file="${sample.name}-current.txt"/>
+
+    <property name="package.remote.port" value="22"/>
+    <scp file="${sample.name}-current.txt"
+         remoteTofile="${package.remote.path}/samples/${sample.name}/${sample.name}-${DSTAMP}.tgz"
+         keyfile="${package.remote.keyfile}"
+         passphrase="" port="${package.remote.port}" trust="true"/>
+
+    <delete file="${sample.name}-current.txt"/>
+
+  </target>
+
+
+</project>
