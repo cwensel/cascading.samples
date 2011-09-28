@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2010 Concurrent, Inc. All Rights Reserved.
+ * Copyright (c) 2007-2011 Concurrent, Inc. All Rights Reserved.
  *
  * Project and contact information: http://www.cascading.org/
  *
@@ -21,19 +21,20 @@
 
 package logparser;
 
+import java.util.Properties;
+
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
+import cascading.flow.hadoop.HadoopFlowConnector;
 import cascading.operation.regex.RegexParser;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
-import cascading.scheme.TextLine;
-import cascading.tap.Hfs;
-import cascading.tap.Lfs;
+import cascading.scheme.hadoop.TextLine;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
+import cascading.tap.hadoop.Hfs;
+import cascading.tap.hadoop.Lfs;
 import cascading.tuple.Fields;
-
-import java.util.Properties;
 
 /**
  *
@@ -80,7 +81,7 @@ public class Main
     FlowConnector.setApplicationJarClass( properties, Main.class );
 
     // connect the assembly to the SOURCE and SINK taps
-    Flow parsedLogFlow = new FlowConnector( properties ).connect( logTap, remoteLogTap, importPipe );
+    Flow parsedLogFlow = new HadoopFlowConnector( properties ).connect( logTap, remoteLogTap, importPipe );
 
     // optionally print out the parsedLogFlow to a DOT file for import into a graphics package
     // parsedLogFlow.writeDOT( "logparser.dot" );

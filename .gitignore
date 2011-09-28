@@ -1,5 +1,6 @@
 junitvm*.properties
 build.properties
+gradle.properties
 .DS_Store
 !lib/build
 build
@@ -8,3 +9,5 @@ javadoc
 *.iml
 *.iws
 *.ipr
+.gradle
+output

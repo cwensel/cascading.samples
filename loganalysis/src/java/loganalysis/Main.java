@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2010 Concurrent, Inc. All Rights Reserved.
+ * Copyright (c) 2007-2011 Concurrent, Inc. All Rights Reserved.
  *
  * Project and contact information: http://www.cascading.org/
  *
@@ -29,6 +29,7 @@ import cascading.cascade.CascadeConnector;
 import cascading.cascade.Cascades;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
+import cascading.flow.hadoop.HadoopFlowConnector;
 import cascading.operation.aggregator.Count;
 import cascading.operation.expression.ExpressionFunction;
 import cascading.operation.regex.RegexParser;
@@ -37,10 +38,10 @@ import cascading.pipe.Each;
 import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
-import cascading.scheme.TextLine;
-import cascading.tap.Hfs;
-import cascading.tap.Lfs;
+import cascading.scheme.hadoop.TextLine;
 import cascading.tap.Tap;
+import cascading.tap.hadoop.Hfs;
+import cascading.tap.hadoop.Lfs;
 import cascading.tuple.Fields;
 
 /**
@@ -54,7 +55,7 @@ public class Main
     Properties properties = new Properties();
     FlowConnector.setApplicationJarClass( properties, Main.class );
 
-    FlowConnector flowConnector = new FlowConnector( properties );
+    FlowConnector flowConnector = new HadoopFlowConnector( properties );
     CascadeConnector cascadeConnector = new CascadeConnector();
 
     String inputPath = args[ 0 ];

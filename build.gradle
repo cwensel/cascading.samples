@@ -1,0 +1,158 @@
+/*
+ * Copyright (c) 2007-2011 Concurrent, Inc. All Rights Reserved.
+ *
+ * Project and contact information: http://www.concurrentinc.com/
+ */
+
+apply plugin: 'java'
+
+evaluationDependsOn('logparser')
+evaluationDependsOn('loganalysis')
+evaluationDependsOn('wordcount')
+evaluationDependsOn('hadoop')
+
+configurations {
+  sshAntTask
+  s3AntTask
+}
+
+dependencies {
+  sshAntTask 'org.apache.ant:ant-jsch:1.7.1', 'jsch:jsch:0.1.29'
+  s3AntTask 'thirdparty:awstasks:0.3'
+}
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+  mavenRepo name: 'conjars', urls: 'http://conjars.org/repo/'
+  mavenRepo name: 'apache', urls: 'https://repository.apache.org/content/repositories/releases/'
+}
+
+if( project.properties[ 'teamcity' ] ) // make them system properties
+System.properties.putAll(project.properties[ 'teamcity' ])
+
+if( System.properties[ 'aws.properties' ] )
+{
+  file(System.properties[ 'aws.properties' ]).withReader { reader ->
+    def awsProperties = new Properties()
+    awsProperties.load(reader)
+    System.properties.putAll(awsProperties)
+  }
+}
+
+def hadoopHome = System.properties[ 'hadoop.home' ]
+
+commandLines = [
+        logparser: "jar logparser.jar data/apache.200.txt output",
+        loganalysis: "jar loganalysis.jar data/apache.200.txt output",
+        wordcount: "jar wordcount.jar data/url+page.200.txt output local",
+        hadoop: "jar hadoop.jar data/apache.200.txt output"
+]
+
+numParts = [
+        logparser: 1,
+        loganalysis: 3,
+        wordcount: 5,
+        hadoop: 1
+]
+
+def prepareTasks = []
+def archivePaths = []
+
+subprojects {
+
+  def verifyPath = "${buildDir}/verify/"
+  def execPath = "${verifyPath}/${project.name}"
+
+  task unpackDist(dependsOn: 'dist') {
+    archivePath = tasks[ 'dist' ].archivePath
+    archivePaths << archivePath
+  }
+
+  unpackDist << {
+    ant.untar(src: archivePath, dest: verifyPath, compression: "gzip")
+  }
+
+  task execSample(dependsOn: unpackDist) {
+    description = 'execute all samples using $hadoop.home property, disable with $execsample.skip=true'
+    enabled = System.properties[ 'execsample.skip' ] != 'true'
+  }
+
+  execSample << {
+
+    assert hadoopHome
+    ant.exec(dir: execPath, executable: "${hadoopHome}/bin/hadoop", output: "${verifyPath}/console.txt") {
+      arg(line: commandLines[ project.name ])
+    }
+  }
+
+  execSample << {
+    assert fileTree(execPath).include('**/part-00000').getFiles().size() == numParts[ project.name ]
+    println "${project.name} PASSED exec dist tests"
+  }
+
+  prepareTasks << execSample
+}
+
+task s3Upload(dependsOn: prepareTasks) {
+
+  awsAccessId = System.properties[ 'publish.aws.accessId' ]
+  awsSecretKey = System.properties[ 'publish.aws.secretKey' ]
+  s3Bucket = System.properties[ 'publish.bucket' ]
+
+  remotePath = "samples/2.0/"
+}
+
+s3Upload << {
+
+  ant.taskdef(name: 's3Upload', classname: 'dak.ant.taskdefs.S3Upload',
+          classpath: configurations.s3AntTask.asPath)
+
+  archivePaths.each {archive ->
+    ant.s3Upload(verbose: 'true', accessId: awsAccessId, secretKey: awsSecretKey,
+            bucket: s3Bucket, prefix: remotePath, publicRead: 'true') {
+      fileset(file: archive)
+    }
+  }
+}
+
+task sitePublish(dependsOn: s3Upload) << {
+
+  def publishBucket = System.properties[ 'publish.bucket' ]
+  def publishDownloadPath = System.properties[ 'publish.download.path' ]
+  def publishPort = !System.properties[ 'publish.port' ] ? '22' : System.properties[ 'publish.port' ]
+  def publishKeyFile = System.properties[ 'publish.keyfile' ]
+
+  archivePaths.each { tarFile ->
+    def releaseTar = tarFile.name
+
+    def currentPath = new File('sample-current.txt')
+
+    currentPath.write("http://${publishBucket}/samples/2.0/${releaseTar}")
+
+    ant.taskdef(name: 'scp', classname: 'org.apache.tools.ant.taskdefs.optional.ssh.Scp',
+            classpath: configurations.sshAntTask.asPath)
+
+    def remoteToFile = "${publishDownloadPath}/samples/2.0/${releaseTar}"
+
+    ant.scp(file: currentPath, remoteToFile: remoteToFile,
+            keyfile: publishKeyFile, passphrase: '', port: publishPort, trust: 'true')
+
+    currentPath.delete()
+  }
+}
+
+task updateBuildFile() << {
+
+  subprojects.each { sub ->
+
+    if( sub.name != 'hadoop' )
+    {
+      copy {
+        from 'sample.build.gradle'
+        into sub.projectDir
+        rename { file -> 'build.gradle'}
+      }
+    }
+  }
+}

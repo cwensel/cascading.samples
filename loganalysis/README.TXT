@@ -1,6 +1,12 @@
-To use, make sure Hadoop is in your path and, optionally, HADOOP_CONF is set. Then execute
+To use, make sure Hadoop is in your path and, optionally, HADOOP_CONF is set.
 
-ant -Dcascading.home=../cascading jar
-hadoop jar ./build/loganalysis.jar data/apache.200.txt output
+From the downloaded archive execute,
 
-Note that if you are running a local cluster, the above 'output' directory will show up in HDFS.
+> hadoop jar loganalysis.jar data/apache.200.txt output
+
+If building from source,
+
+> gradle jar
+> hadoop jar ./build/libs/loganalysis.jar data/apache.200.txt output
+
+Note that if HADOOP_CONF references a cluster, the above 'output' directory will show up in HDFS.
